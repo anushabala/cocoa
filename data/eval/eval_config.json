@@ -1,0 +1,7 @@
+{
+  "templates_dir": "/Users/anushabala/projects/game-dialogue/src/eval/templates",
+  "evals_per_worker": 5,
+  "workers_per_eval": 3,
+  "eval_timeout": 600,
+  "max_prev_turns": 5
+}
