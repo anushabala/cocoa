@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title>Let's negotiate!</title>
+    <style>
+
+        .header {
+            font-size: 1.0rem;
+            padding: 10px 10px 10px 10px;
+            border: 2px solid #d6d4d4;
+            color: #000e7f;
+        }
+    </style>
+
+    <link rel="stylesheet" type="text/css" href="../static/survey.css">
+    <script type="text/javascript" src="http://www.kryogenix.org/code/browser/sorttable/sorttable.js"></script> 
+    <script type="text/javascript" src="//code.jquery.com/jquery-1.4.2.min.js"></script>
+    <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.6/socket.io.min.js"></script>
+</head>
+
+<script>
+    $(document).ready(function() {
+        $("#start").click(function() {
+            window.location.reload(true);
+        });
+    });
+
+</script>
+
+
+<body >
+    <div class="wrapper" >
+        <div class="header" style="text-align: justify">
+            <h2><b>Task Instructions</b></h2> <br>
+            <p style="color: #3458e5; text-align: center"><b>[These instructions are repeated on subsequent pages too.]</b></p><br>
+            <p>In this task, you will be presented with {{ evals_per_worker }} partial dialogues, one after the other. For each dialogue, you will be given a list of potential sentences that could come next in the dialogue. For each sentence, please rate whether it is a sensible next sentence or not, given the context, by rating the sentence as -1 (not sensible), 1 (sensible), or 0 (ambiguous or unclear). Your goal is to identify sentences that would lead to a coherent dialogue in English.</p><br>
+            <p>For each dialogue, you will also be presented with a "context" that the dialogue was performed in. The dialogues in these tasks are <b>negotiations</b> between buyers and sellers based on Craigslist posts, and so the context for each dialogue is the <b>Craigslist</b> post that the negotiation was based on. You will also be given the <b>role</b> (buyer or seller) of each person in the dialogue.</p><br>
+            <h3> Please click the 'Start' button below to begin the first task.</h3>
+            <br>
+            <button id="start">Start!</button>
+        </div>
+
+        
+
+    </div>
+
+
+</body>
+</html>

@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title>Let's negotiate!</title>
+    <style>
+        td {
+            padding: 0 15px 0 15px;
+        }
+
+        #instructions > p,li {
+            font-size:15px;
+        }
+
+        #facts {
+            font-size: 18px;
+        }
+
+        .buyer {
+            color: #2171f2;
+        }
+
+        .seller {
+            color: #069e0d;
+        }
+
+        table { 
+            border-collapse: collapse; 
+            padding: 10px;
+            margin: 15px auto;
+        }
+
+        th, td {
+            padding: 10px;
+            vertical-align: text-top;
+        }
+
+        tr:nth-child(n) { 
+            border: solid thin #b6b7ba;
+        }
+
+        form {
+            padding: 10px;
+        }
+
+        ul {
+            margin-left: 20px;
+        }
+
+        #facts {
+            font-size: 18px;
+        }
+
+        #options {
+            float:left;
+        }
+        .header {
+            font-size: 1.0rem;
+            padding: 10px 10px 10px 10px;
+            border: 2px solid #d6d4d4;
+            color: #000e7f;
+        }
+
+        .scenario {
+            font-size: 1.0rem;
+            padding: 10px 10px 10px 10px;
+            border: 2px solid #d6d4d4;
+            color: #000e7f;
+        }
+
+        .context {
+            font-size: 1.0rem;
+            padding: 10px 10px 10px 10px;
+            border: 2px solid #d6d4d4;
+            color: #000e7f;
+            text-align: left;
+        }
+
+        .candidates {
+            font-size: 1.0rem;
+            padding: 10px 10px 10px 10px;
+            border: 2px solid #d6d4d4;
+            color: #000e7f;
+            text-align: left;
+        }
+
+        .not_sensible {
+            color:#b70000;
+        }
+
+        .sensible {
+            color:#04a026;
+        }
+
+        .ambiguous {
+            color:#f77604;
+        }
+
+    </style>
+
+    <link rel="stylesheet" type="text/css" href="../static/survey.css">
+    <script type="text/javascript" src="http://www.kryogenix.org/code/browser/sorttable/sorttable.js"></script> 
+    <script type="text/javascript" src="//code.jquery.com/jquery-1.4.2.min.js"></script>
+    <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.6/socket.io.min.js"></script>
+</head>
+
+<script>
+
+    questionAnswers = {};
+
+    function isOneSelected(rName) {
+        var radios = document.getElementsByName(rName);
+        for (i=0; i<radios.length; i++) {
+            if (radios[i].checked) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function getSelected(rName) {
+        var radios = document.getElementsByName(rName);
+        for (i=0; i<radios.length; i++) {
+            if (radios[i].checked) {
+                return radios[i].value;
+            }
+        }
+    }
+    // Ensure all questions have a selected response
+    function ensureAllAnswered(){
+        var questionAnswers = [];
+        var limit = parseInt({{ evaluation['candidates']|length }});
+        var i = 0;
+        while (i < limit) {
+            i = i+1;
+            var groupName = "candidate_"+i;
+
+            if (!isOneSelected(groupName)) {
+                $("#error").show();
+                questionAnswers = null;
+                break; 
+            } else {
+                var s = getSelected(groupName);
+                questionAnswers.push(s);
+            }
+        }
+        console.log(questionAnswers);
+        return questionAnswers;
+    }
+
+    $(document).ready(function() {
+        $("#submit").click(function() {
+            questionAnswers = ensureAllAnswered();
+            if (questionAnswers) {
+                response = {"uid": "{{ uid }}", "response": questionAnswers, "evaluation_id": "{{ evaluation['exid'] }}"};
+                console.log(questionAnswers);
+                $.ajax({
+                url: "/_submit/",
+                type: "POST",
+                data: JSON.stringify(response),
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                success: function(data){
+                    window.location.reload(true);
+                },
+                failure: function(){
+                    console.log(":(");
+                }
+                });
+            }
+
+        });
+        
+    });
+
+</script>
+
+
+<body >
+    <div class="wrapper" >
+        <div class="header" style="text-align: justify">
+            <h2><b>Dialogue {{ eval_num }} / {{ evals_per_worker }}</b></h2> <br>
+            <p> Shown below is a Craigslist post advertising an item for sale. The text following the post is an excerpt from a <b>negotiation</b> between a potential buyer and the owner of the item. In the excerpt, utterances shown in <span class="buyer"><b>blue</b></span> were said by the buyer, and those in <span class="seller"><b>green</b></span> were said by the seller.</p>
+            <br>
+            <p>In the dialogue, mentions of a numerical price are replaced by the word PRICE. You can assume that the actual price mentioned is reasonable given the Craigslist post.</p>
+            <br>
+            <p>These negotiations were conducted on an online platform that allows buyers and sellers to chat and make, accept, or reject offers. If a user makes an offer, the offer will be displayed as <b>OFFER PRICE</b>. Similarly, if an offer is accepted or rejected, this will be displayed as <b>ACCEPT PRICE</b> or <b>REJECT PRICE</b>. </p>
+        </div>
+        <br>
+         
+        <div class="scenario" style="text-align: justify">
+        <h3> Craigslist post </h3>
+        <br>
+        <table>
+        <tbody>
+            {% set kb = evaluation['kb'] %}
+            
+            <p><b>{{ kb['item']['Title'] }}</b></p>
+            <br>
+            
+            {% if kb['item']['Images']|length >= 1 %}
+            <img height="250" width="250" src="{{ url_for('static', filename='img/')}}{{kb['item']['Images'][0]}}"/>
+            <br>
+            {% endif %}
+            
+
+            {% for attr in attributes if not (attr == 'Role' or attr == 'Target' or attr == 'Bottomline' or attr == 'Price' or attr == 'Images' or attr == 'Category' or attr == 'Title') %}
+                {% if attr == 'Description' %}
+                    {% for s in kb['item'][attr] %}
+                    <div id="factDescription" class="description-collapse">
+                        {{ s }}<br/>     
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td><b>{{attr}}</b></td>
+                    {% set value = kb['item'][attr] %}
+                    {% if value is none %}
+                        <td>?</td> 
+                    {% elif value is string %}
+                        <td>{{ value }}</td>
+                    {% else %}
+                        <td>{{ value|join(', ') }}</td>
+                    {% endif %}
+                    </tr>
+                {% endif %}
+            {% endfor %}
+        </tbody>
+        </table>
+        </div>
+        <br>
+
+        <div class="context">
+            <h3>Dialogue</h3>
+            <table style="float:left;">
+            {% for n in range(evaluation['prev_turns']|length) %}
+            <tr>
+            <td class="{{ evaluation['prev_roles'][n] }}">{{ evaluation['prev_roles'][n]|title}}</td><td class="{{ evaluation['prev_roles'][n] }}">{{ evaluation['prev_turns'][n] }}</td>
+            </tr>
+            {% endfor %}
+            </table>
+            
+        </div>
+        <br>
+
+        <div class="header" style="text-align: justify;">
+            <p>Given below are {{ evaluation['candidates']|length }} sentences that could come next in this dialogue. Each of these candidates could potentially be said by the <span class="{{ evaluation['role'] }}"><b>{{ evaluation['role'] }}</b></span>. For each sentence, please rate whether it is a sensible next sentence or not, given the dialogue, by rating the sentence as <span class="not_sensible">not sensible</span>, <span class="sensible">sensible</span>, or <span class="ambiguous">unsure</span>. A <span class="sensible">sensible sentence</span> is one that is coherent and reasonable given the above dialogue. Any sentence that is not coherent given the preceding dialogue should be rated as <span class="not_sensible">not sensible</span>. Some examples of incoherent candidates: </p>
+            <br>
+            <ul>
+            <li>changing the topic abruptly</li>
+            <li>ignoring a question that was previously asked</li>
+            <li>clearly talking about an item that is different from the one being discussed so far</li>
+            </ul>
+            <br>
+            <p><b>Please only select <span class="ambiguous">unsure</span> if you are truly unsure whether a given candidate is appropriate. </b> For example, if the candidate mentions a feature of the item and it is unclear whether that feature is applicable to the item, you may select 'unsure' for that candidate. Most of your responses should be either sensible or not sensible.</p>
+            <br>
+            <p>The candidates below may contain OFFER, ACCEPT, or REJECT actions. <b>You must judge whether these are reasonable given the dialogue above.</b> For example, an OFFER action is only reasonable if, in the dialogue above, the buyer and seller appear to have reached a verbal agreement. An ACCEPT or REJECT action is only reasonable <b>if the dialogue above contains an OFFER action.</b> You can assume that all prices are reasonable (i.e. the price in an OFFER action matches the verbally agreed upon price, and the price in an ACCEPT/REJECT action matches the price in the preceding OFFER action.) </p>
+            <p>When you are done, click the button below to submit your evaluations.</p>
+
+            <table align="left">
+            <tr>
+            <th class="sensible">Sensible</th><th class="not_sensible">Not sensible</th><th class="ambiguous">Unsure</th><th>Candidate</th>
+            </tr>
+            {% for candidate in evaluation['candidates'] %}
+            <tr id="c_{{loop.index}}">
+            
+            <td><input type="radio" name="candidate_{{ loop.index }}" value="1"></td><td><input type="radio" name="candidate_{{ loop.index }}" value="-1"></td><td><input type="radio" name="candidate_{{ loop.index }}" value="0"></td><td class="{{ evaluation['role'] }}">{{ candidate['response'] }}</td>
+            </tr>
+            {% endfor %}
+            </table>
+            <div id="error" style="clear:both; display:none">
+            <h4 style="color:#ff0000;">You must select a response for every candidate.</h4>
+            </div>
+
+        </div>
+        <br>
+
+        <br>
+        <div style="padding: 10px 0px 10px 0px; margin:auto;">
+        <button id="submit">Submit!</button>
+        </div>
+    
+
+    </div>
+
+
+</body>
+</html>
