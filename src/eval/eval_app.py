@@ -84,7 +84,7 @@ def preprocess_utterance(tokens):
                 token = "START"
             elif token.startswith("<") and token.endswith(">"):
                 token = token.upper().strip("<").strip(">")
-            if token not in string.punctuation and not token.startswith("'"):
+            if token not in string.punctuation and not token.startswith("'") and not "'" in token:
                 s += " " + token
             else:
                 s += token
