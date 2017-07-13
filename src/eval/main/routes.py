@@ -45,14 +45,13 @@ def index():
 
     mturk = True if request.args.get('mturk') and int(request.args.get('mturk')) == 1 else None
     if backend.is_user_starting(userid()):
-        print "user is just starting"
         backend.start_user_session(userid())
         return render_template('instructions.html',
                                uid=userid(),
                                evals_per_worker=app.config['params']['evals_per_worker'])
     elif backend.is_user_finished(userid()):
         # show completion code
-        code = backend.generate_code(userid())
+        code = backend.generate_code(userid()) if mturk else None
         return render_template('finished.html',
                                uid=userid(),
                                evals_per_worker=app.config['params']['evals_per_worker'],
@@ -74,9 +73,6 @@ def submit():
     response = request.json['response']
     uid = request.json['uid']
     ex_id = request.json['evaluation_id']
-
-    print response
-    print ex_id
 
     backend.submit(uid, ex_id, response)
     return jsonify(success=True)

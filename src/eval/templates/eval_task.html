@@ -2,7 +2,7 @@
 <html>
 <head lang="en">
     <meta charset="UTF-8">
-    <title>Let's negotiate!</title>
+    <title>Dialogue Evaluation Task</title>
     <style>
         td {
             padding: 0 15px 0 15px;
@@ -181,12 +181,28 @@
 <body >
     <div class="wrapper" >
         <div class="header" style="text-align: justify">
-            <h2><b>Dialogue {{ eval_num }} / {{ evals_per_worker }}</b></h2> <br>
+            <h2><b>Evaluation {{ eval_num }} / {{ evals_per_worker }}</b></h2> <br>
+            <h3> Context </h3>
             <p> Shown below is a Craigslist post advertising an item for sale. The text following the post is an excerpt from a <b>negotiation</b> between a potential buyer and the owner of the item. In the excerpt, utterances shown in <span class="buyer"><b>blue</b></span> were said by the buyer, and those in <span class="seller"><b>green</b></span> were said by the seller.</p>
             <br>
             <p>In the dialogue, mentions of a numerical price are replaced by the word PRICE. You can assume that the actual price mentioned is reasonable given the Craigslist post.</p>
             <br>
             <p>These negotiations were conducted on an online platform that allows buyers and sellers to chat and make, accept, or reject offers. If a user makes an offer, the offer will be displayed as <b>OFFER PRICE</b>. Similarly, if an offer is accepted or rejected, this will be displayed as <b>ACCEPT PRICE</b> or <b>REJECT PRICE</b>. </p>
+
+            <br><hr><br>
+            <h3> Evaluation task </h3>
+            <p>Below the dialogue are {{ evaluation['candidates']|length }} sentences that could come next in this dialogue. Each of these candidates could potentially be said by the <span class="{{ evaluation['role'] }}"><b>{{ evaluation['role'] }}</b></span>. For each sentence, please rate whether it is a sensible next sentence or not, given the dialogue, by rating the sentence as <span class="not_sensible">not sensible</span>, <span class="sensible">sensible</span>, or <span class="ambiguous">unsure</span>. A <span class="sensible">sensible sentence</span> is one that is coherent and reasonable given the above dialogue. Any sentence that is not coherent given the preceding dialogue should be rated as <span class="not_sensible">not sensible</span>. Some examples of incoherent candidates: </p>
+            <br>
+            <ul>
+            <li>changing the topic abruptly</li>
+            <li>ignoring a question that was previously asked</li>
+            <li>clearly talking about an item that is different from the one being discussed so far</li>
+            </ul>
+            <br>
+            <p><b>Please only select <span class="ambiguous">unsure</span> if you are truly unsure whether a given candidate is appropriate. </b> For example, if the candidate mentions a feature of the item and it is unclear whether that feature is applicable to the item, you may select 'unsure' for that candidate. Most of your responses should be either sensible or not sensible.</p>
+            <br>
+            <p>The candidates below may contain OFFER, ACCEPT, or REJECT actions. <b>You must judge whether these are reasonable given the dialogue above.</b> For example, an OFFER action is only reasonable if, in the dialogue above, the buyer and seller appear to have reached a verbal agreement. An ACCEPT or REJECT action is only reasonable <b>if the dialogue above contains an OFFER action.</b> You can assume that all prices are reasonable (i.e. the price in an OFFER action matches the verbally agreed upon price, and the price in an ACCEPT/REJECT action matches the price in the preceding OFFER action.) </p>
+            <p>When you are done, click the button below to submit your evaluations.</p>
         </div>
         <br>
          
@@ -245,23 +261,11 @@
         </div>
         <br>
 
-        <div class="header" style="text-align: justify;">
-            <p>Given below are {{ evaluation['candidates']|length }} sentences that could come next in this dialogue. Each of these candidates could potentially be said by the <span class="{{ evaluation['role'] }}"><b>{{ evaluation['role'] }}</b></span>. For each sentence, please rate whether it is a sensible next sentence or not, given the dialogue, by rating the sentence as <span class="not_sensible">not sensible</span>, <span class="sensible">sensible</span>, or <span class="ambiguous">unsure</span>. A <span class="sensible">sensible sentence</span> is one that is coherent and reasonable given the above dialogue. Any sentence that is not coherent given the preceding dialogue should be rated as <span class="not_sensible">not sensible</span>. Some examples of incoherent candidates: </p>
-            <br>
-            <ul>
-            <li>changing the topic abruptly</li>
-            <li>ignoring a question that was previously asked</li>
-            <li>clearly talking about an item that is different from the one being discussed so far</li>
-            </ul>
-            <br>
-            <p><b>Please only select <span class="ambiguous">unsure</span> if you are truly unsure whether a given candidate is appropriate. </b> For example, if the candidate mentions a feature of the item and it is unclear whether that feature is applicable to the item, you may select 'unsure' for that candidate. Most of your responses should be either sensible or not sensible.</p>
-            <br>
-            <p>The candidates below may contain OFFER, ACCEPT, or REJECT actions. <b>You must judge whether these are reasonable given the dialogue above.</b> For example, an OFFER action is only reasonable if, in the dialogue above, the buyer and seller appear to have reached a verbal agreement. An ACCEPT or REJECT action is only reasonable <b>if the dialogue above contains an OFFER action.</b> You can assume that all prices are reasonable (i.e. the price in an OFFER action matches the verbally agreed upon price, and the price in an ACCEPT/REJECT action matches the price in the preceding OFFER action.) </p>
-            <p>When you are done, click the button below to submit your evaluations.</p>
-
+        <div class="header">
+            <h4> Please rate each candidate response below based on the dialogue and Craigslist post above.</h4>
             <table align="left">
             <tr>
-            <th class="sensible">Sensible</th><th class="not_sensible">Not sensible</th><th class="ambiguous">Unsure</th><th>Candidate</th>
+            <th class="sensible">Sensible</th><th class="not_sensible">Not sensible</th><th class="ambiguous">Unsure</th><th>Candidate <span style="{{ evaluation['role'] }}">[{{ evaluation['role'] }}]</span></th>
             </tr>
             {% for candidate in evaluation['candidates'] %}
             <tr id="c_{{loop.index}}">

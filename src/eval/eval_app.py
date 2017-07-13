@@ -5,6 +5,7 @@ import sqlite3
 from datetime import datetime
 import os
 import shutil
+import string
 import warnings
 import atexit
 from flask import Markup
@@ -83,14 +84,18 @@ def preprocess_utterance(tokens):
                 token = "START"
             elif token.startswith("<") and token.endswith(">"):
                 token = token.upper().strip("<").strip(">")
-            s += token
+            if token not in string.punctuation and not token.startswith("'"):
+                s += " " + token
+            else:
+                s += token
         elif isinstance(token, list):
             if token[1][1] == 'price':
-                s += "PRICE"
+                s += " " + "PRICE"
             else:
-                s += token[0]
-        s += " "
+                s += " " + token[0]
     s = s.strip()
+    if s == "<br>":
+        s = ""
     return Markup(s)
 
 
@@ -99,6 +104,8 @@ def process_evaluations(eval_file):
     processed = []
 
     for e in raw_evals:
+        if 'exid' not in e or 'prev_roles' not in e:
+            continue
         if e['candidates'] is None:
             continue
         candidates = []
