@@ -189,7 +189,7 @@
 
             <br><hr><br>
             <h3> Evaluation task </h3>
-            <p>Below the dialogue are {{ evaluation['candidates']|length }} possible responses that could come next in this dialogue. Each of these responses could potentially be said by the <span class="{{ evaluation['role'] }}"><b>{{ evaluation['role'] }}</b></span>. For each candidate, please rate whether it is a sensible response or not, given the dialogue, by rating the response as <span class="not_sensible">not sensible</span>, <span class="sensible">sensible</span>, or <span class="ambiguous">partially sensible</span>. A <span class="sensible">sensible response</span> is one that is coherent and reasonable given the above dialogue. Any response that is not coherent given the preceding dialogue should be rated as <span class="not_sensible">not sensible</span>. Some examples of incoherent responses: </p>
+            <p>Below the dialogue are {{ evaluation['candidates']|length }} possible responses that could come next in this dialogue. Each of these responses could potentially be said by the <span class="{{ evaluation['role'] }}"><b>{{ evaluation['role'] }}</b></span>. For each candidate, please rate whether it is a sensible response or not, given the dialogue, by rating the response as <span class="not_sensible">not sensible</span>, <span class="sensible">sensible</span>, or <span class="ambiguous">partly sensible</span>. A <span class="sensible">sensible response</span> is one that is coherent and reasonable given the above dialogue. Any response that is not coherent given the preceding dialogue should be rated as <span class="not_sensible">not sensible</span>. Some examples of incoherent responses: </p>
             <br>
             <ul>
             <li>changing the topic abruptly</li>
@@ -197,7 +197,7 @@
             <li>clearly talking about an item that is different from the one being discussed so far</li>
             </ul>
             <br>
-            <p><b>Please only select <span class="ambiguous">partially sensible</span> if it is truly unclear whether a given candidate is appropriate. </b> For example, if the candidate mentions a feature of the item and it is unclear whether that feature is applicable to the item, you may select 'unsure' for that response. Another example is a response with several sentences, where some sentences are sensible while others are not. Most of your responses should be either sensible or not sensible.</p>
+            <p><b>Please only select <span class="ambiguous">partly sensible</span> if it is truly unclear whether a given candidate is appropriate. </b> For example, if the candidate mentions a feature of the item and it is unclear whether that feature is applicable to the item, you may select 'unsure' for that response. Another example is a response with several sentences, where some sentences are sensible while others are not. Most of your responses should be either sensible or not sensible.</p>
             <br>
             <p>The candidates below may contain OFFER, ACCEPT, or REJECT actions. <b>You must judge whether these are reasonable given the dialogue above.</b> For example, an OFFER action is only reasonable if, in the dialogue above, the buyer and seller appear to have reached a verbal agreement. An ACCEPT or REJECT action is only reasonable <b>if the dialogue above contains an OFFER action.</b> You can assume that all prices are reasonable (i.e. the price in an OFFER action matches the verbally agreed upon price, and the price in an ACCEPT/REJECT action matches the price in the preceding OFFER action.) </p>
             <p>When you are done, click the button below to submit your evaluations.</p>
@@ -263,7 +263,7 @@
             <h4> Please rate each candidate response below based on the dialogue and Craigslist post above.</h4>
             <table align="left">
             <tr>
-            <th class="sensible">Sensible</th><th class="not_sensible">Not sensible</th><th class="ambiguous">Unsure</th><th>Candidate <span style="{{ evaluation['role'] }}">[{{ evaluation['role'] }}]</span></th>
+            <th class="sensible">Sensible</th><th class="not_sensible">Not sensible</th><th class="ambiguous">Partly sensible</th><th>Candidate <span style="{{ evaluation['role'] }}">[{{ evaluation['role'] }}]</span></th>
             </tr>
             {% for candidate in evaluation['candidates'] %}
             <tr id="c_{{loop.index}}">
