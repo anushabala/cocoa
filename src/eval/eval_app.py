@@ -152,6 +152,7 @@ def dump_results(evaluations, db_path, transcript_path):
     for userid, exid, r in cursor.fetchall():
         if exid not in responses:
             responses[exid] = []
+        r = json.loads(r)
         r = [int(x) for x in r]
         responses[exid].append(r)
 
