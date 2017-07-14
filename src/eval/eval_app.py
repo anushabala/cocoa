@@ -152,11 +152,12 @@ def dump_results(evaluations, db_path, transcript_path):
     for userid, exid, r in cursor.fetchall():
         if exid not in responses:
             responses[exid] = []
+        r = [int(x) for x in r]
         responses[exid].append(r)
 
     results = []
     for exid in responses.keys():
-        e = evaluations['exid']
+        e = evaluations[exid]
         e['results'] = responses[exid]
         results.append(e)
 
