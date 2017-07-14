@@ -76,10 +76,13 @@ def add_evaluations_to_db(db_file, evaluations):
 
 def preprocess_utterance(tokens):
     s = ""
-    for token in tokens:
+    for (idx, token) in enumerate(tokens):
         if isinstance(token, str) or isinstance(token, unicode):
             if token == "</s>":
-                token = "<br>"
+                if idx != len(tokens) - 1:
+                    token = "<br>"
+                else:
+                    token = ""
             elif token == "_start_":
                 token = "START"
             elif token.startswith("<") and token.endswith(">"):
@@ -140,6 +143,31 @@ def process_evaluations(eval_file):
 
     return processed
 
+
+def dump_results(evaluations, db_path, transcript_path):
+    responses = {}
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('''SELECT * FROM response''')
+    for userid, exid, r in cursor.fetchall():
+        if exid not in responses:
+            responses[exid] = []
+        responses[exid].append(r)
+
+    results = []
+    for exid in responses.keys():
+        e = evaluations['exid']
+        e['results'] = responses[exid]
+        results.append(e)
+
+    json.dump(results, open(transcript_path, 'w'))
+
+
+def cleanup(flask_app):
+    db_path = flask_app.config['params']['db']['location']
+    transcript_path = os.path.join(flask_app.config['params']['logging']['results_dir'], 'eval_results.json')
+    evaluations = flask_app.config['evaluations']
+    dump_results(evaluations, db_path, transcript_path)
 
 def init(output_dir):
     db_file = os.path.join(output_dir, DB_FILE_NAME)
@@ -211,5 +239,5 @@ if __name__ == "__main__":
 
     server = WSGIServer(('', args.port), app, log=WebLogger.get_logger(), error_log=error_log_file)
     # todo cleanup - dump evals?
-    # atexit.register(cleanup, flask_app=app)
+    atexit.register(cleanup, flask_app=app)
     server.serve_forever()
