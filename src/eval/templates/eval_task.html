@@ -105,13 +105,13 @@
         }
 
         .cross{
-            background-image: url(https://cdn2.iconfinder.com/data/icons/perfect-flat-icons-2/512/Delete_remove_close_exit_trash_cancel_cross.png);
+            background-image: url('{{ url_for('static', filename='img/cross.png')}}');
         }
         .question{
-            background-image: url(https://image.flaticon.com/icons/png/512/36/36601.png);
+            background-image: url('{{ url_for('static', filename='img/questionmark.png')}}');
         }
         .check{
-            background-image: url(http://www.iconsdb.com/icons/preview/green/checkmark-xxl.png);
+            background-image: url('{{ url_for('static', filename='img/checkmark.png')}}');
         }
 
         .cc-selector input{
@@ -240,7 +240,7 @@
 
             <br><hr><br>
             <h3> Evaluation task </h3>
-            <p>Below the dialogue are {{ evaluation['candidates']|length }} possible responses that could come next in this dialogue. Each of these responses could potentially be said by the <span class="{{ evaluation['role'] }}"><b>{{ evaluation['role'] }}</b></span>. For each candidate, please rate whether it is a sensible response or not, given the dialogue, by rating it as <span class="not_sensible">not sensible</span> (<img src="https://cdn2.iconfinder.com/data/icons/perfect-flat-icons-2/512/Delete_remove_close_exit_trash_cancel_cross.png" width="13" height="13" style="display: inline;">), <span class="sensible">sensible</span>, (<img src="http://www.iconsdb.com/icons/preview/green/checkmark-xxl.png" width="13" height="13" style="display:inline;">), or <span class="ambiguous">partly sensible</span> (<img src="https://image.flaticon.com/icons/png/512/36/36601.png" width="13" height="13" style="display:inline;">). A <span class="sensible">sensible response</span> is one that is coherent and reasonable given the above dialogue. Any response that is not reasonable should be rated as <span class="not_sensible">not sensible</span>. Some examples of incoherent responses: </p>
+            <p>Below the dialogue are {{ evaluation['candidates']|length }} possible responses that could come next in this dialogue. Each of these responses could potentially be said by the <span class="{{ evaluation['role'] }}"><b>{{ evaluation['role'] }}</b></span>. For each candidate, please rate whether it is a sensible response or not, given the dialogue, by rating it as <span class="not_sensible">not sensible</span> (<img src="{{ url_for('static', filename='img/cross.png')}}" width="13" height="13" style="display: inline;">), <span class="sensible">sensible</span>, (<img src="{{ url_for('static', filename='img/checkmark.png')}}" width="13" height="13" style="display:inline;">), or <span class="ambiguous">partly sensible</span> (<img src="{{ url_for('static', filename='img/questionmark.png')}}" width="13" height="13" style="display:inline;">). A <span class="sensible">sensible response</span> is one that is coherent and reasonable given the above dialogue. Any response that is not reasonable should be rated as <span class="not_sensible">not sensible</span>. Some examples of incoherent responses: </p>
             <br>
             <ul>
             <li>changing the topic abruptly</li>
@@ -248,7 +248,7 @@
             <li>clearly talking about an item that is different from the one being discussed so far</li>
             </ul>
             <br>
-            <p><b>Some candidates may seem partly reasonable. </b> For example, a candidate might contain several sentences, where some sentences are sensible while others are not. Please rate these as <b><span class="ambiguous">partly sensible</span> (<img src="https://image.flaticon.com/icons/png/512/36/36601.png" width="13" height="13" style="display:inline;">)</b>. Most of your responses should be either sensible or not sensible.</p>
+            <p><b>Some candidates may seem partly reasonable. </b> For example, a candidate might contain several sentences, where some sentences are sensible while others are not. Please rate these as <b><span class="ambiguous">partly sensible</span> (<img src="{{ url_for('static', filename='img/questionmark.png')}}" width="13" height="13" style="display:inline;">)</b>. Most of your responses should be either sensible or not sensible.</p>
             <br>
             <p>The candidates below may contain OFFER, ACCEPT, or REJECT actions. <b>You must judge whether these are reasonable given the dialogue above.</b> For example, an OFFER action is only reasonable if, in the dialogue above, the buyer and seller appear to have reached a verbal agreement. An ACCEPT or REJECT action is only reasonable <b>if the dialogue above contains an OFFER action, and if the buyer and seller have reached an agreement (or not reached an agreement, for a REJECT action).</b></p>
             <br>
