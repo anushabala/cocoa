@@ -115,9 +115,6 @@ def process_evaluations(eval_file):
             continue
         candidates = []
 
-        print e['prev_turns']
-        print e['prev_roles']
-
         for c in e['candidates']:
             if 'response' not in c.keys():
                 continue
