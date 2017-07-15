@@ -44,7 +44,7 @@
             {% else %}
             {{ evals_per_worker }} partial dialogues, one after the other. For each dialogue, you will be a given 
             {% endif %}
-            a list of candidate responses that could come next in the dialogue. Please rate whether each candidate is reasonable or not, given the dialogue, by rating it not sensible, sensible, or partly sensible. Your goal is to identify responses that would lead to a coherent dialogue in English.</p><br>
+            a list of candidate responses that could come next in the dialogue. Please rate whether each candidate is reasonable or not, given the dialogue, by rating it as not sensible, partly sensible, or sensible. Your goal is to identify responses that would lead to a coherent dialogue in English.</p><br>
             
             <p>
             {% if evals_per_worker == 1 %} You will also be presented with a "context" that the dialogue was performed in. The dialogue is a negotiation between a buyer and a seller based on a Craigslist post, and so the context for the dialogue is a Craigslist post.
