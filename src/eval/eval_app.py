@@ -109,8 +109,6 @@ def process_evaluations(eval_file):
     for e in raw_evals:
         if 'exid' not in e or 'prev_roles' not in e:
             continue
-        if e['uuid'] != 'C_3f16709d5b6f4a3b9af4d28bb5d65cd5':
-            continue
         if e['candidates'] is None:
             continue
         candidates = []
