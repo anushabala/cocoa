@@ -205,6 +205,7 @@ if __name__ == "__main__":
 
     eval_file = args.eval_file
     evaluations = process_evaluations(eval_file)
+    print "Processed {:d} evaluation contexts.".format(len(evaluations))
     evaluations = dict((x["exid"], x) for x in evaluations)
 
     db_file, log_file, error_log_file, results_dir = init(args.output)

@@ -46,6 +46,7 @@ class EvalBackend(object):
             raise ValueError("User {:s} has not completed {:d} evaluations".format(userid,
                                                                                    self.params["evals_per_worker"]))
         code = "EC_" + uuid_gen.uuid4().hex
+        self.logger.debug("User {:s} has completion code {:s}".format(userid, code))
         with self.conn:
             cursor = self.conn.cursor()
             try:
@@ -129,7 +130,8 @@ class EvalBackend(object):
                     active = set(json.loads(active))
                     timed_out_users = _get_timed_out_users(uuid)
                     for u in timed_out_users:
-                        if u in active :
+                        if u in active:
+                            self.logger.debug("Timing out evaluation {:s} for user {:s}".format(uuid, u))
                             active.remove(u)
                     active = json.dumps(list(active))
                     cursor.execute('''UPDATE evaluation SET active=? WHERE id=?''', (active, uuid))
@@ -141,6 +143,7 @@ class EvalBackend(object):
     def get_next_evaluation(self, userid):
         evaluation = self.get_new_evaluation_context(userid)
         uuid = evaluation["exid"]
+        self.logger.debug("Assigning example {:s} to user {:s}".format(uuid, userid))
         with self.conn:
             try:
                 cursor = self.conn.cursor()
@@ -187,13 +190,17 @@ class EvalBackend(object):
                     uuid = np.random.choice(list(pending_evals))
                     if not _is_eval_pending(uuid):
                         # if evaluation is no longer pending, recurse and try to find another pending eval
+                        self.logger.debug("Expired state: found {:s} is no longer pending while "
+                                          "assigning to user {:s}. Recursing....".format(uuid, userid))
                         return _select_pending_eval()
 
+                    self.logger.debug("Randomly selected pending eval {:s} for user {:s}".format(uuid, userid))
                     return self.evaluations[uuid]
 
                 # If no evals are pending, select a random eval from the full set of evals (pick one that isn't
                 # currently active)
                 uuid = np.random.choice(list(inactive_evals))
+                self.logger.debug("No pending evals: selecting currently inactive eval {:s}".format(uuid))
                 return self.evaluations[uuid]
 
             except sqlite3.IntegrityError:
@@ -207,7 +214,7 @@ class EvalBackend(object):
     def submit(self, userid, eval_id, response):
         with self.conn:
             cursor = self.conn.cursor()
-            print "Updating user with userid {:s}".format(userid)
+            self.logger.debug("User {:s} submitted response for {:s}".format(userid, eval_id))
             cursor.execute('''INSERT INTO response VALUES (?,?,?)''',
                            (userid, eval_id, json.dumps(response)))
             cursor.execute('''UPDATE active_user SET evaluated = evaluated + 1 WHERE userid=?''', (userid,))
