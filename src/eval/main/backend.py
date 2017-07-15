@@ -66,7 +66,6 @@ class EvalBackend(object):
                     self.create_user_if_not_exists(userid)
                     return False
                 evaluated = int(evaluated[0])
-                print "Number evaluated by user: {:d}".format(evaluated)
                 return evaluated == self.params["evals_per_worker"]
             except sqlite3.IntegrityError:
                 print("WARNING: Rolled back transaction")

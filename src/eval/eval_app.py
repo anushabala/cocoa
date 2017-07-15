@@ -109,9 +109,15 @@ def process_evaluations(eval_file):
     for e in raw_evals:
         if 'exid' not in e or 'prev_roles' not in e:
             continue
+        if e['uuid'] != 'C_3f16709d5b6f4a3b9af4d28bb5d65cd5':
+            continue
         if e['candidates'] is None:
             continue
         candidates = []
+
+        print e['prev_turns']
+        print e['prev_roles']
+
         for c in e['candidates']:
             if 'response' not in c.keys():
                 continue
@@ -131,13 +137,16 @@ def process_evaluations(eval_file):
             processed_turns.append(preprocess_utterance(turn))
 
         if len(processed_turns[0]) == 0:
-            processed_turns.pop(0)
+            processed_turns = processed_turns[1:]
             e['prev_roles'] = e['prev_roles'][1:]
 
         if len(processed_turns) > params["max_prev_turns"]:
-            processed_turns = processed_turns[len(processed_turns)-params["max_prev_turns"]:]
-            e['prev_roles'] = e['prev_roles'][len(processed_turns)-params["max_prev_turns"]:]
+            curr_len = len(processed_turns)
+            processed_turns = processed_turns[curr_len-params["max_prev_turns"]:]
+            e['prev_roles'] = e['prev_roles'][curr_len-params["max_prev_turns"]:]
         e['prev_turns'] = processed_turns
+
+        assert len(e['prev_turns']) == len(e['prev_roles'])
 
         processed.append(e)
 
@@ -170,6 +179,7 @@ def cleanup(flask_app):
     transcript_path = os.path.join(flask_app.config['params']['logging']['results_dir'], 'eval_results.json')
     evaluations = flask_app.config['evaluations']
     dump_results(evaluations, db_path, transcript_path)
+
 
 def init(output_dir):
     db_file = os.path.join(output_dir, DB_FILE_NAME)
