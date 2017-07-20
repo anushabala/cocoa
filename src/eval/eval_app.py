@@ -1,19 +1,17 @@
 import argparse
-from collections import defaultdict
 import json
 import sqlite3
 from datetime import datetime
 import os
 import shutil
 import string
-import warnings
 import atexit
 from flask import Markup
 
-from src.basic.util import read_json
 from src.eval import create_app
 from gevent.pywsgi import WSGIServer
 from src.eval.main.web_logger import WebLogger
+from src.model.negotiation.preprocess import markers as SpecialMarkers
 
 __author__ = 'anushabala'
 
@@ -39,6 +37,8 @@ def add_website_arguments(parser):
                              '%%Y-%%m-%%d. '
                              'If the provided directory exists, all data in it is overwritten unless the '
                              '--reuse parameter is provided.')
+    parser.add_argument('--reuse', action='store_true', help='If provided, reuse and don\'t overwrite the '
+                                                             'output directory.')
 
 
 def init_database(db_file):
@@ -64,11 +64,14 @@ def init_database(db_file):
     conn.close()
 
 
-def add_evaluations_to_db(db_file, evaluations):
+def add_evaluations_to_db(db_file, evaluations, update=False):
     conn = sqlite3.connect(db_file)
     c = conn.cursor()
     for uuid in evaluations.keys():
-        c.execute('''INSERT INTO evaluation VALUES (?,"[]","[]")''', (uuid,))
+        if update:
+            c.execute('''INSERT OR IGNORE INTO evaluation VALUES (?,"[]","[]")''', (uuid,))
+        else:
+            c.execute('''INSERT INTO evaluation VALUES (?,"[]","[]")''', (uuid,))
 
     conn.commit()
     conn.close()
@@ -78,19 +81,23 @@ def preprocess_utterance(tokens):
     s = ""
     for (idx, token) in enumerate(tokens):
         if isinstance(token, str) or isinstance(token, unicode):
-            if token == "</s>":
+            if token == SpecialMarkers.EOS:
                 if idx != len(tokens) - 1:
                     token = "<br>"
                 else:
                     token = ""
+            elif token == SpecialMarkers.GO_S or token == SpecialMarkers.GO_B:
+                continue
             elif token == "_start_":
                 token = "START"
             elif token.startswith("<") and token.endswith(">"):
                 token = token.upper().strip("<").strip(">")
+
             if token not in string.punctuation and not token.startswith("'") and not "'" in token:
                 s += " " + token
             else:
                 s += token
+
         elif isinstance(token, list):
             if token[1][1] == 'price':
                 s += " " + "PRICE"
@@ -176,22 +183,24 @@ def cleanup(flask_app):
     dump_results(evaluations, db_path, transcript_path)
 
 
-def init(output_dir):
-    db_file = os.path.join(output_dir, DB_FILE_NAME)
-    log_file = os.path.join(output_dir, LOG_FILE_NAME)
-    error_log_file = os.path.join(output_dir, ERROR_LOG_FILE_NAME)
-    results_dir = os.path.join(output_dir, TRANSCRIPTS_DIR)
-    if os.path.exists(output_dir):
-        shutil.rmtree(output_dir)
-    os.makedirs(output_dir)
+def init(output_dir, reuse=False):
+    db_path = os.path.join(output_dir, DB_FILE_NAME)
+    log_path = os.path.join(output_dir, LOG_FILE_NAME)
+    error_log_path = os.path.join(output_dir, ERROR_LOG_FILE_NAME)
+    results_path = os.path.join(output_dir, TRANSCRIPTS_DIR)
 
-    init_database(db_file)
+    if not reuse:
+        if os.path.exists(output_dir):
+            shutil.rmtree(output_dir)
+        os.makedirs(output_dir)
 
-    if os.path.exists(results_dir):
-        shutil.rmtree(results_dir)
-    os.makedirs(results_dir)
+        init_database(db_path)
 
-    return db_file, log_file, error_log_file, results_dir
+        if os.path.exists(results_path):
+            shutil.rmtree(results_path)
+        os.makedirs(results_path)
+
+    return db_path, log_path, error_log_path, results_path
 
 
 if __name__ == "__main__":
@@ -208,7 +217,8 @@ if __name__ == "__main__":
     print "Processed {:d} evaluation contexts.".format(len(evaluations))
     evaluations = dict((x["exid"], x) for x in evaluations)
 
-    db_file, log_file, error_log_file, results_dir = init(args.output)
+    db_file, log_file, error_log_file, results_dir = init(args.output, args.reuse)
+    add_evaluations_to_db(db_file, evaluations, update=args.reuse)
     error_log_file = open(error_log_file, 'w')
 
     WebLogger.initialize(log_file)
@@ -217,7 +227,6 @@ if __name__ == "__main__":
     params['logging'] = {}
     params['logging']['app_log'] = log_file
     params['logging']['results_dir'] = results_dir
-    add_evaluations_to_db(db_file, evaluations)
 
     instructions = None
 

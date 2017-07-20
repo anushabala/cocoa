@@ -24,20 +24,13 @@ class EvalBackend(object):
         self.evaluations = evaluations
         self.logger = WebLogger.get_logger()
 
-    def _update_user(self, cursor, userid, **kwargs):
-        kwargs["timestamp"] = current_timestamp_in_seconds()
-        keys = sorted(kwargs.keys())
-        values = [kwargs[k] for k in keys]
-        set_string = ", ".join(["{}=?".format(k) for k in keys])
-
-        cursor.execute("UPDATE active_user SET {} WHERE userid=?".format(set_string), tuple(values + [userid]))
-
     def create_user_if_not_exists(self, userid):
         with self.conn:
             cursor = self.conn.cursor()
             try:
                 cursor.execute('''INSERT OR IGNORE INTO active_user VALUES (?,?,?)''',
                                (userid, -1, current_timestamp_in_seconds()))
+                self.conn.commit()
             except sqlite3.IntegrityError:
                 print("WARNING: Rolled back transaction")
 
@@ -52,6 +45,7 @@ class EvalBackend(object):
             try:
                 cursor.execute('''INSERT INTO completion_code VALUES (?,?,?)''',
                                (userid, code, current_timestamp_in_seconds()))
+                self.conn.commit()
                 return code
             except sqlite3.IntegrityError:
                 print("WARNING: Rolled back transaction")
@@ -106,6 +100,7 @@ class EvalBackend(object):
             cursor = self.conn.cursor()
             try:
                 cursor.execute('''UPDATE active_user SET evaluated=0 WHERE userid=?''', (userid,))
+                self.conn.commit()
             except sqlite3.IntegrityError:
                 print("WARNING: Rolled back transaction")
 
@@ -136,6 +131,7 @@ class EvalBackend(object):
                     active = json.dumps(list(active))
                     cursor.execute('''UPDATE evaluation SET active=? WHERE id=?''', (active, uuid))
                     result = cursor.fetchone()
+                self.conn.commit()
 
             except sqlite3.IntegrityError:
                 print("WARNING: Rolled back transaction")
@@ -151,10 +147,12 @@ class EvalBackend(object):
                 active = json.loads(cursor.fetchone()[0])
                 active.append(userid)
                 cursor.execute('''UPDATE evaluation SET active=? WHERE id=?''', (json.dumps(active), uuid))
+                self.conn.commit()
 
                 cursor.execute('''INSERT INTO assigned_eval VALUES (?,?,?)''', (
                     userid, uuid, current_timestamp_in_seconds()
                 ))
+                self.conn.commit()
                 return evaluation
             except sqlite3.IntegrityError:
                 print("WARNING: Rolled back transaction")
@@ -218,6 +216,22 @@ class EvalBackend(object):
             cursor.execute('''INSERT INTO response VALUES (?,?,?)''',
                            (userid, eval_id, json.dumps(response)))
             cursor.execute('''UPDATE active_user SET evaluated = evaluated + 1 WHERE userid=?''', (userid,))
+            self.conn.commit()
+            cursor.execute('''SELECT active, completed FROM evaluation WHERE id=?''', (eval_id,))
+
+            active, completed = cursor.fetchone()
+            active = set(json.loads(active))
+            if userid in active:
+                active.remove(userid)
+            active = json.dumps(list(active))
+
+            completed = json.loads(completed)
+            completed.append(userid)
+            completed = json.dumps(completed)
+
+            cursor.execute('''UPDATE evaluation SET active=? WHERE id=?''', (active, eval_id))
+            cursor.execute('''UPDATE evaluation SET completed=? WHERE id=?''', (completed, eval_id))
+
             self.conn.commit()
 
     def close(self):
