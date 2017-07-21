@@ -111,7 +111,7 @@ class EvalBackend(object):
             now = current_timestamp_in_seconds()
             for (assigned_userid, timestamp) in cursor.fetchall():
                 timestamp = float(timestamp)
-                if (timestamp - now) > self.params["eval_timeout"]:
+                if (now - timestamp) > self.params["eval_timeout"]:
                     timed_out.append(assigned_userid)
             return timed_out
 
@@ -119,8 +119,8 @@ class EvalBackend(object):
             cursor = self.conn.cursor()
             try:
                 cursor.execute('''SELECT id, active FROM evaluation''')
-                result = cursor.fetchone()
-                while result is not None:
+                results = cursor.fetchall()
+                for result in results:
                     uuid, active = result
                     active = set(json.loads(active))
                     timed_out_users = _get_timed_out_users(uuid)
@@ -130,7 +130,6 @@ class EvalBackend(object):
                             active.remove(u)
                     active = json.dumps(list(active))
                     cursor.execute('''UPDATE evaluation SET active=? WHERE id=?''', (active, uuid))
-                    result = cursor.fetchone()
                 self.conn.commit()
 
             except sqlite3.IntegrityError:
@@ -173,12 +172,14 @@ class EvalBackend(object):
                 evals = cursor.fetchall()
                 pending_evals = set()
                 inactive_evals = set()
+                all_evals = set()
                 for (uuid, active, completed) in evals:
                     active = set(json.loads(active))
                     completed = set(json.loads(completed))
                     if userid in completed:
                         # Don't show a user the same eval twice
                         continue
+                    all_evals.add(uuid)
                     if len(active) == 0 and len(completed) < self.params["workers_per_eval"]:
                         inactive_evals.add(uuid)
                     if len(completed) + len(active) < self.params["workers_per_eval"]:
@@ -195,10 +196,15 @@ class EvalBackend(object):
                     self.logger.debug("Randomly selected pending eval {:s} for user {:s}".format(uuid, userid))
                     return self.evaluations[uuid]
 
-                # If no evals are pending, select a random eval from the full set of evals (pick one that isn't
+                # If no evals are pending, try to select a random eval from the full set of evals (pick one that isn't
                 # currently active)
-                uuid = np.random.choice(list(inactive_evals))
-                self.logger.debug("No pending evals: selecting currently inactive eval {:s}".format(uuid))
+                if len(inactive_evals) > 0:
+                    uuid = np.random.choice(list(inactive_evals))
+                    self.logger.debug("No pending evals: selecting currently inactive eval {:s}".format(uuid))
+                else:
+                    # otherwise, select any eval at random
+                    uuid = np.random.choice(list(all_evals))
+                    self.logger.debug("No pending evals: selecting one at random with ID {:s}".format(uuid))
                 return self.evaluations[uuid]
 
             except sqlite3.IntegrityError:
