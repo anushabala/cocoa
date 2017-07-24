@@ -8,8 +8,8 @@ from collections import Counter, defaultdict
 import sqlite3
 import csv
 
-
 HIGH_ACCEPT_THRESHOLD = 1.0
+
 
 def get_candidate_reusability_histogram():
     pass
@@ -73,31 +73,40 @@ def analyze_high_accept_users(turk_results, ratings_per_context=3):
                 workerid = codes_to_turkers[code]
                 mturk_high_accept_users[workerid].append(context['exid'])
 
-    print 'Total # of contexts: {:.1f}'.format(total_contexts)
-    print 'Total # of contexts with high acceptance %: {:.2f}\t({:.2f}%)'.format(
+    print ''
+    print '{:50s}: {:.1f}'.format('Total # of contexts', total_contexts)
+    print '{:50s}: {:.2f}\t({:.2f}%)'.format(
+        'Total # of contexts with high acceptance %',
         len(high_accept_contexts.keys()),
-        len(high_accept_contexts.keys()) * 100./total_contexts
+        len(high_accept_contexts.keys()) * 100. / total_contexts
     )
 
-    print 'Total # of evaluations: {:.1f}'.format(total_evals)
-    print 'Total # of evaluations with high acceptance %: {:.2f}\t({:.2f}%)'.format(
+    print '{:50s}: {:.1f}'.format('Total # of evaluations', total_evals)
+    print '{:50s}: {:.2f}\t({:.2f}%)'.format(
+        'Total # of evaluations with high acceptance %',
         high_accept_evals,
-        high_accept_evals * 100./total_evals
+        high_accept_evals * 100. / total_evals
     )
 
     sorted_turkers = sorted(mturk_high_accept_users.items(), key=lambda x: len(x[1]), reverse=True)
-    print 'MTurk workers with most # of high-acceptance evals:'
+    print ''
+    print 'MTurk workers with > 1/2 high-acceptance evals:'
     for (workerid, completed_evals) in sorted_turkers:
         num_evals = float(len(completed_evals))
-        print '\t{:20s}:\t{:2.1f}/{:2.1f} evals\t{:s}'.format(workerid, num_evals,
-                                                            evals_per_turker[workerid],
-                                                            ", ".join(completed_evals))
+        frac = num_evals / evals_per_turker[workerid]
+        if frac < 0.5:
+            continue
+        print '\t{:20s}\t{:2.1f}/{:2.1f} evals\t({:2.1%})\t{:s}'.format(workerid, num_evals,
+                                                                        evals_per_turker[workerid],
+                                                                        frac,
+                                                                        ", ".join(completed_evals))
 
     sorted_contexts = sorted(high_accept_contexts.items(), key=lambda x: x[1], reverse=True)
+    print ''
     print 'Contexts with high acceptance %:'
-    print 'Context ID\t# evals'
+    print '\t{:^20s}\t{:^10s}'.format('Context ID', '# evals')
     for (exid, num_evals) in sorted_contexts:
-        print '{:s}\t{:5d}'.format(exid, num_evals)
+        print '\t{:^20s}\t{:^10d}'.format(exid, num_evals)
 
 
 def consolidate_ratings(raw_responses, ratings_per_eval=3):
@@ -164,6 +173,7 @@ def get_agreement_score(ratings, ratings_per_eval=3):
     P_bar_e = sum([p[j] * p[j] for j in p.keys()])
 
     return (P_bar - P_bar_e) / (1 - P_bar_e)
+
 
 if __name__ == "__main__":
     parser = ArgumentParser()
