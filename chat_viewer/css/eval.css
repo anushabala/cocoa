@@ -52,11 +52,15 @@
     float: left;
 }
 .chatLog .chat {
-    width: 100%;
+    width: 60%;
     border-collapse: collapse;
 }
 .kb0 th {
     background-color: #80ced6;
+}
+
+.role {
+    width: 20%;
 }
 .chatLog .buyer {
     background-color: #adf6ff;
@@ -73,7 +77,6 @@
 .survey .response1 th {
     background-color: #ffef96;
 }
-
 .candidates .sensible {
   background-color: #67d85b;
 }
@@ -84,4 +87,29 @@
 
 .candidates .ambiguous {
   background-color: #f49450;
+}
+
+.candidates .maj_sensible {
+    background-color: rgba(103, 216, 91, 0.4);
+}
+
+.candidates .maj_not_sensible {
+    background-color: rgba(239, 91, 91, 0.4);
+}
+
+.candidates .maj_ambiguous {
+    background-color: rgba(244, 148, 80, 0.4);
+}
+
+.candidates table, td, th {
+    border: 1px solid #a0a2a5;
+}
+
+.candidates table {
+    width: 60%;
+    padding: 5px 5px 5px 5px;
+}
+
+.candidate_col {
+    width: 70%;
 }
