@@ -227,7 +227,9 @@ class EvalBackend(object):
         for (lbl, c) in zip(response, candidates):
             lbl = int(lbl)
             if c['true_label'] is not None:
-                if c['true_label'] != lbl:
+                if c['true_label'] == -1 and lbl == 1:
+                    return False
+                if c['true_label'] == 1 and lbl != 1:
                     return False
         return True
 
