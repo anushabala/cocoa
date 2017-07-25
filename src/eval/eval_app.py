@@ -4,14 +4,12 @@ import sqlite3
 from datetime import datetime
 import os
 import shutil
-import string
 import atexit
-from flask import Markup
 
 from src.eval import create_app
 from gevent.pywsgi import WSGIServer
 from src.eval.main.web_logger import WebLogger
-from src.model.negotiation.preprocess import markers as SpecialMarkers
+from src.eval.process_evals import process_evaluations
 
 __author__ = 'anushabala'
 
@@ -77,84 +75,6 @@ def add_evaluations_to_db(db_file, evaluations, update=False):
     conn.close()
 
 
-def preprocess_utterance(tokens):
-    s = ""
-    for (idx, token) in enumerate(tokens):
-        if isinstance(token, str) or isinstance(token, unicode):
-            if token == SpecialMarkers.EOS:
-                if idx != len(tokens) - 1:
-                    token = "<br>"
-                else:
-                    token = ""
-            elif token == SpecialMarkers.GO_S or token == SpecialMarkers.GO_B:
-                continue
-            elif token == "_start_":
-                token = "START"
-            elif token.startswith("<") and token.endswith(">"):
-                token = token.upper().strip("<").strip(">")
-
-            if token not in string.punctuation and not token.startswith("'") and not "'" in token:
-                s += " " + token
-            else:
-                s += token
-
-        elif isinstance(token, list):
-            if token[1][1] == 'price':
-                s += " " + "PRICE"
-            else:
-                s += " " + token[0]
-    s = s.strip()
-    if s == "<br>":
-        s = ""
-    return Markup(s)
-
-
-def process_evaluations(eval_file):
-    raw_evals = json.load(open(eval_file, 'r'))
-    processed = []
-
-    for e in raw_evals:
-        if 'exid' not in e or 'prev_roles' not in e:
-            continue
-        if e['candidates'] is None:
-            continue
-        candidates = []
-
-        for c in e['candidates']:
-            if 'response' not in c.keys():
-                continue
-            c['response'] = preprocess_utterance(c['response'])
-            candidates.append(c)
-        e['candidates'] = candidates
-
-        prev_turns = e['prev_turns']
-        if len(prev_turns) == 1 and prev_turns[0][0] == '</s>':
-            # start of dialogue
-            e['prev_turns'] = ['START']
-            processed.append(e)
-            continue
-
-        processed_turns = []
-        for turn in prev_turns:
-            processed_turns.append(preprocess_utterance(turn))
-
-        if len(processed_turns[0]) == 0:
-            processed_turns = processed_turns[1:]
-            e['prev_roles'] = e['prev_roles'][1:]
-
-        if len(processed_turns) > params["max_prev_turns"]:
-            curr_len = len(processed_turns)
-            processed_turns = processed_turns[curr_len-params["max_prev_turns"]:]
-            e['prev_roles'] = e['prev_roles'][curr_len-params["max_prev_turns"]:]
-        e['prev_turns'] = processed_turns
-
-        assert len(e['prev_turns']) == len(e['prev_roles'])
-
-        processed.append(e)
-
-    return processed
-
-
 def dump_results(evaluations, db_path, transcript_path):
     responses = {}
     conn = sqlite3.connect(db_path)
@@ -213,7 +133,7 @@ if __name__ == "__main__":
         params = json.load(fin)
 
     eval_file = args.eval_file
-    evaluations = process_evaluations(eval_file)
+    evaluations = process_evaluations(eval_file, params)
     print "Processed {:d} evaluation contexts.".format(len(evaluations))
     evaluations = dict((x["exid"], x) for x in evaluations)
 
