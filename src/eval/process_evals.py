@@ -59,13 +59,18 @@ def preprocess_candidates(raw_candidates):
 
 def preprocess_dialogue_context(e, params):
     prev_turns = e['prev_turns']
-    if len(prev_turns) == 1 and prev_turns[0][0] == '</s>':
-        # start of dialogue
-        e['prev_turns'] = ['START']
+    if len(prev_turns) == 1:
+        turn = prev_turns[0]
+        u = preprocess_utterance(turn)
+        if len(u) == 0:
+            e['prev_turns'] = ['START']
+        else:
+            e['prev_turns'] = [ u ]
     else:
         processed_turns = []
         for turn in prev_turns:
-            processed_turns.append(preprocess_utterance(turn))
+            u = preprocess_utterance(turn)
+            processed_turns.append(u)
 
         if len(processed_turns[0]) == 0:
             processed_turns = processed_turns[1:]
