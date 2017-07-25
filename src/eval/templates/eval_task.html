@@ -189,7 +189,7 @@
             var groupName = "candidate_"+i;
 
             if (!isOneSelected(groupName)) {
-                $("#error").show();
+                $("#notAllSelectedError").show();
                 questionAnswers = null;
                 break; 
             } else {
@@ -197,7 +197,6 @@
                 questionAnswers.push(s);
             }
         }
-        console.log(questionAnswers);
         return questionAnswers;
     }
 
@@ -214,14 +213,39 @@
                 contentType: "application/json; charset=utf-8",
                 dataType: "json",
                 success: function(data){
-                    window.location.reload(true);
+                    if (data['success']) {
+                        console.log("Success!!");
+                        $("#notAllSelectedError").hide();
+                        $("#sanityCheckError").hide();
+                        window.location.reload(true);
+                    } else {
+                        console.log("Bad selections :( ");
+                        $("#sanityCheckError").show();
+                    }
                 },
                 failure: function(){
-                    console.log(":(");
+                    console.log('POST request failure :(');
                 }
                 });
             }
 
+        });
+
+        $("#skip").click(function() {
+            response = {"uid": "{{ uid }}", "evaluation_id": "{{ evaluation['exid'] }}"};
+            $.ajax({
+                url: "/_skip/",
+                type: "POST",
+                data: JSON.stringify(response),
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                success: function(data){
+                    window.location.reload(true);
+                },
+                failure: function(){
+                    console.log('POST request failure :(');
+                }
+            });
         });
         
     });
@@ -251,6 +275,8 @@
             <p><b>Some candidates may seem partly reasonable. </b> For example, a candidate might contain several sentences, where some sentences are sensible while others are not. Please rate these as <b><span class="ambiguous">partly sensible</span> (<img src="{{ url_for('static', filename='img/questionmark.png')}}" width="13" height="13" style="display:inline;">)</b>. Most of your responses should be either sensible or not sensible.</p>
             <br>
             <p>The candidates below may contain OFFER, ACCEPT, or REJECT actions. <b>You must judge whether these are reasonable given the dialogue above.</b> For example, an OFFER action is only reasonable if, in the dialogue above, the buyer and seller appear to have reached a verbal agreement. An ACCEPT or REJECT action is only reasonable <b>if the dialogue above contains an OFFER action, and if the buyer and seller have reached an agreement (or not reached an agreement, for a REJECT action).</b></p>
+            <br>
+            <p><span style="color:#ff0000"><b>Our system knows the right labels for some candidates. If you do select the correct ratings for those candidates, you might be asked to look over your ratings again before submitting the HIT.</b></span></p>
             <br>
             <p>When you are done, click the button below to submit your evaluations.</p>
         </div>
@@ -312,13 +338,24 @@
         <br>
 
         <div class="header">
+            <h4 style="color:#ff0000">If you have already completed an evaluation task with the above Craigslist post and dialogue context, please click the button below to receive a new task.</h4>
+            <br>
+            <button id="skip">Skip!</button>
+        </div>
+        <br>
+
+        <div class="header">
             <h4> Please rate each candidate response below based on the dialogue and Craigslist post above.</h4>
             <table align="left">
             {% for candidate in evaluation['candidates'] %}
             <tr id="c_{{loop.index}}">
             
             <td class="cc-selector">
+            {% if debug == true and candidate['true_label'] is not none and candidate['true_label'] == -1 %}
+            <input id="cross_{{ loop.index }}" type="radio" name="candidate_{{ loop.index }}" value="-1" checked="checked" />
+            {% else %}
             <input id="cross_{{ loop.index }}" type="radio" name="candidate_{{ loop.index }}" value="-1" />
+            {% endif %}
             <label class="img-label cross" for="cross_{{ loop.index }}"></label>
             </td>
 
@@ -328,7 +365,11 @@
             </td>
 
             <td class="cc-selector">
+            {% if debug == true and candidate['true_label'] is not none and candidate['true_label'] == 1 %}
+            <input id="check_{{ loop.index }}" type="radio" name="candidate_{{ loop.index }}" value="1" checked="checked" />
+            {% else %}
             <input id="check_{{ loop.index }}" type="radio" name="candidate_{{ loop.index }}" value="1" />
+            {% endif %}
             <label class="img-label check" for="check_{{ loop.index }}"></label>
             </td>
 
@@ -343,8 +384,11 @@
             </tr>
             {% endfor %}
             </table>
-            <div id="error" style="clear:both; display:none">
+            <div id="notAllSelectedError" style="clear:both; display:none">
             <h4 style="color:#ff0000;">You must select a response for every candidate.</h4>
+            </div>
+            <div id="sanityCheckError" style="clear:both; display:none">
+            <h4 style="color:#ff0000;">Our system indicates that you may have mislabeled one or more candidates for which we know the true rating. Please look over your ratings once more before submitting the HIT!</h4>
             </div>
 
         </div>

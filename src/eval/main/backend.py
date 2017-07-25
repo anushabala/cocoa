@@ -28,8 +28,8 @@ class EvalBackend(object):
         with self.conn:
             cursor = self.conn.cursor()
             try:
-                cursor.execute('''INSERT OR IGNORE INTO active_user VALUES (?,?,?)''',
-                               (userid, -1, current_timestamp_in_seconds()))
+                cursor.execute('''INSERT OR IGNORE INTO active_user VALUES (?,?,?,?)''',
+                               (userid, -1, "[]", current_timestamp_in_seconds()))
                 self.conn.commit()
             except sqlite3.IntegrityError:
                 print("WARNING: Rolled back transaction")
@@ -170,10 +170,16 @@ class EvalBackend(object):
             try:
                 cursor.execute('''SELECT * FROM evaluation''')
                 evals = cursor.fetchall()
+                cursor.execute('''SELECT skipped FROM active_user WHERE userid=?''', (userid,))
+                skipped = cursor.fetchone()[0]
+                skipped = set(json.loads(skipped))
                 pending_evals = set()
                 inactive_evals = set()
                 all_evals = set()
                 for (uuid, active, completed) in evals:
+                    if uuid in skipped:
+                        # If a user previously skipped an evaluation, don't show it to them again
+                        continue
                     active = set(json.loads(active))
                     completed = set(json.loads(completed))
                     if userid in completed:
@@ -215,30 +221,73 @@ class EvalBackend(object):
             cursor = self.conn.cursor()
             return _select_pending_eval()
 
-    def submit(self, userid, eval_id, response):
+    def validate_response(self, eval_id, response):
+        evaluated = self.evaluations[eval_id]
+        candidates = evaluated['candidates']
+        for (lbl, c) in zip(response, candidates):
+            lbl = int(lbl)
+            if c['true_label'] is not None:
+                if c['true_label'] != lbl:
+                    return False
+        return True
+
+    def skip(self, userid, eval_id):
         with self.conn:
-            cursor = self.conn.cursor()
-            self.logger.debug("User {:s} submitted response for {:s}".format(userid, eval_id))
-            cursor.execute('''INSERT INTO response VALUES (?,?,?)''',
-                           (userid, eval_id, json.dumps(response)))
-            cursor.execute('''UPDATE active_user SET evaluated = evaluated + 1 WHERE userid=?''', (userid,))
-            self.conn.commit()
-            cursor.execute('''SELECT active, completed FROM evaluation WHERE id=?''', (eval_id,))
+            try:
+                cursor = self.conn.cursor()
+                self.logger.debug("User {:s} skipped evaluation {:s}".format(userid, eval_id))
+                cursor.execute('''SELECT active FROM evaluation WHERE id=?''', (eval_id,))
+                active = cursor.fetchone()[0]
+                active = set(json.loads(active))
+                if userid in active:
+                    active.remove(userid)
+                active = json.dumps(list(active))
+                cursor.execute('''UPDATE evaluation SET active=? WHERE id=?''', (active, eval_id))
+                self.conn.commit()
 
-            active, completed = cursor.fetchone()
-            active = set(json.loads(active))
-            if userid in active:
-                active.remove(userid)
-            active = json.dumps(list(active))
+                # update evaluations skipped by this user
+                cursor.execute('''SELECT skipped FROM active_user WHERE userid=?''', (userid, ))
+                skipped = cursor.fetchone()[0]
+                skipped = set(json.loads(skipped))
+                skipped.add(eval_id)
+                skipped = json.dumps(list(skipped))
+                cursor.execute('''UPDATE active_user SET skipped=? WHERE userid=?''', (skipped, userid))
+                self.conn.commit()
 
-            completed = json.loads(completed)
-            completed.append(userid)
-            completed = json.dumps(completed)
+            except sqlite3.IntegrityError:
+                print("WARNING: Rolled back transaction")
 
-            cursor.execute('''UPDATE evaluation SET active=? WHERE id=?''', (active, eval_id))
-            cursor.execute('''UPDATE evaluation SET completed=? WHERE id=?''', (completed, eval_id))
+    def submit(self, userid, eval_id, response):
+        # make sure that submit() is never called without validating the response
+        assert self.validate_response(eval_id, response)
 
-            self.conn.commit()
+        with self.conn:
+            try:
+                cursor = self.conn.cursor()
+                self.logger.debug("User {:s} submitted response for {:s}".format(userid, eval_id))
+                cursor.execute('''INSERT INTO response VALUES (?,?,?)''',
+                               (userid, eval_id, json.dumps(response)))
+                cursor.execute('''UPDATE active_user SET evaluated = evaluated + 1 WHERE userid=?''', (userid,))
+                self.conn.commit()
+                cursor.execute('''SELECT active, completed FROM evaluation WHERE id=?''', (eval_id,))
+
+                active, completed = cursor.fetchone()
+                active = set(json.loads(active))
+                if userid in active:
+                    active.remove(userid)
+                active = json.dumps(list(active))
+
+                completed = json.loads(completed)
+                completed.append(userid)
+                completed = json.dumps(completed)
+
+                cursor.execute('''UPDATE evaluation SET active=? WHERE id=?''', (active, eval_id))
+                cursor.execute('''UPDATE evaluation SET completed=? WHERE id=?''', (completed, eval_id))
+
+                self.conn.commit()
+
+            except sqlite3.IntegrityError:
+                print("WARNING: Rolled back transaction")
 
     def close(self):
         self.conn.close()

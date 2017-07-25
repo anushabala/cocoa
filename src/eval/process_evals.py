@@ -10,6 +10,8 @@ ACCEPT = 'ACCEPT'
 REJECT = 'REJECT'
 OFFER = 'OFFER'
 QUIT = 'QUIT'
+PRICE = 'PRICE'
+START = 'START'
 
 
 def preprocess_utterance(tokens):
@@ -118,7 +120,8 @@ def find_negative_sanity_check_candidate(all_contexts, role, category, num_candi
             continue
 
         target = c['target']
-        if ACCEPT in target or REJECT in target or OFFER in target or QUIT in target:
+        if ACCEPT in target or REJECT in target or OFFER in target \
+                or QUIT in target or PRICE in target or START in target:
             continue
 
         possible_targets.append(target)

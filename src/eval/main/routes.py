@@ -44,18 +44,21 @@ def index():
     backend.create_user_if_not_exists(userid())
 
     mturk = True if request.args.get('mturk') and int(request.args.get('mturk')) == 1 else None
+    debug = True if request.args.get('debug') and int(request.args.get('debug')) == 1 else False
     if backend.is_user_starting(userid()):
         backend.start_user_session(userid())
         return render_template('instructions.html',
                                uid=userid(),
-                               evals_per_worker=app.config['params']['evals_per_worker'])
+                               evals_per_worker=app.config['params']['evals_per_worker'],
+                               debug=debug)
     elif backend.is_user_finished(userid()):
         # show completion code
         code = backend.generate_code(userid()) if mturk else None
         return render_template('finished.html',
                                uid=userid(),
                                evals_per_worker=app.config['params']['evals_per_worker'],
-                               mturk_code=code)
+                               mturk_code=code,
+                               debug=debug)
     else:
         evaluation = backend.get_next_evaluation(userid())
         task_num = backend.get_task_num(userid())
@@ -64,7 +67,18 @@ def index():
                                eval_num=task_num,
                                evals_per_worker=app.config['params']['evals_per_worker'],
                                evaluation=evaluation,
-                               attributes=evaluation['kb']['item'].keys())
+                               attributes=evaluation['kb']['item'].keys(),
+                               debug=debug)
+
+
+@main.route('/_skip/', methods=['POST'])
+def skip():
+    backend = get_backend()
+    uid = request.json['uid']
+    ex_id = request.json['evaluation_id']
+
+    backend.skip(uid, ex_id)
+    return jsonify(success=True)
 
 
 @main.route('/_submit/', methods=['POST'])
@@ -73,6 +87,9 @@ def submit():
     response = request.json['response']
     uid = request.json['uid']
     ex_id = request.json['evaluation_id']
+
+    if not backend.validate_response(ex_id, response):
+        return jsonify(success=False)
 
     backend.submit(uid, ex_id, response)
     return jsonify(success=True)

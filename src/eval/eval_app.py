@@ -43,7 +43,7 @@ def init_database(db_file):
     conn = sqlite3.connect(db_file)
     c = conn.cursor()
     c.execute(
-        '''CREATE TABLE active_user (userid text unique, evaluated integer, created_at text)'''
+        '''CREATE TABLE active_user (userid text unique, evaluated integer, skipped text, created_at text)'''
     )
     c.execute(
         '''CREATE TABLE completion_code (userid text, code text, submitted_at text)'''
