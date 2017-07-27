@@ -158,12 +158,12 @@ def add_sanity_checks(evals, num_neg_candidates=2):
         target = e['display_target']
         candidates = e['display_candidates']
 
-        print 'Context ID: {:s}'.format(e['exid'])
-        print 'Role: {:s}'.format(role)
-        print 'Category: {:s}'.format(category)
-        print 'Target: {:s}'.format(target)
-        print 'Previous turns:', e['prev_turns']
-        print 'Previous turns (display)', e['display_prev_turns']
+        # print 'Context ID: {:s}'.format(e['exid'])
+        # print 'Role: {:s}'.format(role)
+        # print 'Category: {:s}'.format(category)
+        # print 'Target: {:s}'.format(target)
+        # print 'Previous turns:', e['prev_turns']
+        # print 'Previous turns (display)', e['display_prev_turns']
         # add negative examples for sanity check
         neg_responses = find_negative_sanity_check_candidate(evals, role, category, num_candidates=num_neg_candidates)
         for response in neg_responses:
@@ -172,7 +172,7 @@ def add_sanity_checks(evals, num_neg_candidates=2):
                 'true_label': -1
             }
             candidates.append(candidate)
-            print 'Negative candidate: ', candidate
+            # print 'Negative candidate: ', candidate
 
         # add target as positive sanity check
         candidate = {
@@ -181,13 +181,13 @@ def add_sanity_checks(evals, num_neg_candidates=2):
         }
         candidates.append(candidate)
 
-        print 'Positive candidate: ', candidate
+        # print 'Positive candidate: ', candidate
 
         # shuffle candidates for each context
         candidates = shuffle_candidates(candidates)
         e['display_candidates'] = candidates
 
-        print ''
+        # print ''
         processed.append(e)
 
     return processed
