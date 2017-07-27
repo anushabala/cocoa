@@ -4,6 +4,7 @@ from src.model.negotiation.preprocess import markers as SpecialMarkers
 from flask import Markup
 import string
 import numpy as np
+import copy
 
 START_THRESHOLD = 3
 ACCEPT = 'ACCEPT'
@@ -12,6 +13,7 @@ OFFER = 'OFFER'
 QUIT = 'QUIT'
 PRICE = 'PRICE'
 START = 'START'
+
 
 
 def preprocess_utterance(tokens):
@@ -201,7 +203,7 @@ def process_evaluations(eval_file, params):
         if skip_context(e):
             continue
 
-        candidates = e['candidates']
+        candidates = copy.deepcopy(e['candidates'])
         e['display_candidates'] = preprocess_candidates(e['candidates'])
         e['candidates'] = candidates
         if is_dialogue_end(e):
