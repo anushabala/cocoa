@@ -59,30 +59,36 @@ def preprocess_candidates(raw_candidates):
 
 def preprocess_dialogue_context(e, params):
     prev_turns = e['prev_turns']
+    prev_roles = e['prev_roles']
     if len(prev_turns) == 1:
         turn = prev_turns[0]
         u = preprocess_utterance(turn)
         if len(u) == 0:
-            e['prev_turns'] = ['START']
+            e['display_prev_turns'] = ['START']
         else:
-            e['prev_turns'] = [ u ]
+            e['display_prev_turns'] = [ u ]
+        e['display_prev_roles'] = prev_roles
     else:
         processed_turns = []
+        processed_roles = e['prev_roles']
         for turn in prev_turns:
             u = preprocess_utterance(turn)
             processed_turns.append(u)
 
         if len(processed_turns[0]) == 0:
             processed_turns = processed_turns[1:]
-            e['prev_roles'] = e['prev_roles'][1:]
+            processed_roles = processed_roles[1:]
 
         if len(processed_turns) > params["max_prev_turns"]:
             curr_len = len(processed_turns)
             processed_turns = processed_turns[curr_len-params["max_prev_turns"]:]
-            e['prev_roles'] = e['prev_roles'][curr_len-params["max_prev_turns"]:]
-        e['prev_turns'] = processed_turns
+            processed_roles = processed_roles[curr_len-params["max_prev_turns"]:]
+        e['display_prev_turns'] = processed_turns
+        e['display_prev_roles'] = processed_roles
 
-    assert len(e['prev_turns']) == len(e['prev_roles'])
+    e['prev_turns'] = prev_turns
+    e['prev_roles'] = prev_roles
+    assert len(e['display_prev_turns']) == len(e['display_prev_roles'])
 
     return e
 
@@ -101,7 +107,7 @@ def is_dialogue_start(context):
 
 
 def is_dialogue_end(context):
-    candidates = context['candidates']
+    candidates = context['display_candidates']
     for c in candidates:
         response = c['response']
         if ACCEPT not in response and REJECT not in response:
@@ -124,7 +130,7 @@ def find_negative_sanity_check_candidate(all_contexts, role, category, num_candi
             # don't really need to check for dialogue end here since those contexts were already skipped
             continue
 
-        target = c['target']
+        target = c['display_target']
         if ACCEPT in target or REJECT in target or OFFER in target \
                 or QUIT in target or PRICE in target or START in target:
             continue
@@ -149,14 +155,15 @@ def add_sanity_checks(evals, num_neg_candidates=2):
     for e in evals:
         role = e['role']
         category = e['kb']['item']['Category']
-        target = e['target']
-        candidates = e['candidates']
+        target = e['display_target']
+        candidates = e['display_candidates']
 
-        # print 'Context ID: {:s}'.format(e['exid'])
-        # print 'Role: {:s}'.format(role)
-        # print 'Category: {:s}'.format(category)
-        # print 'Target: {:s}'.format(target)
-        # print 'Previous turns:', e['prev_turns']
+        print 'Context ID: {:s}'.format(e['exid'])
+        print 'Role: {:s}'.format(role)
+        print 'Category: {:s}'.format(category)
+        print 'Target: {:s}'.format(target)
+        print 'Previous turns:', e['prev_turns']
+        print 'Previous turns (display)', e['display_prev_turns']
         # add negative examples for sanity check
         neg_responses = find_negative_sanity_check_candidate(evals, role, category, num_candidates=num_neg_candidates)
         for response in neg_responses:
@@ -165,7 +172,7 @@ def add_sanity_checks(evals, num_neg_candidates=2):
                 'true_label': -1
             }
             candidates.append(candidate)
-            # print 'Negative candidate: ', candidate
+            print 'Negative candidate: ', candidate
 
         # add target as positive sanity check
         candidate = {
@@ -174,13 +181,13 @@ def add_sanity_checks(evals, num_neg_candidates=2):
         }
         candidates.append(candidate)
 
-        # print 'Positive candidate: ', candidate
+        print 'Positive candidate: ', candidate
 
         # shuffle candidates for each context
         candidates = shuffle_candidates(candidates)
-        e['candidates'] = candidates
+        e['display_candidates'] = candidates
 
-        # print ''
+        print ''
         processed.append(e)
 
     return processed
@@ -194,12 +201,14 @@ def process_evaluations(eval_file, params):
         if skip_context(e):
             continue
 
-        e['candidates'] = preprocess_candidates(e['candidates'])
+        candidates = e['candidates']
+        e['display_candidates'] = preprocess_candidates(e['candidates'])
+        e['candidates'] = candidates
         if is_dialogue_end(e):
             continue
 
         e = preprocess_dialogue_context(e, params)
-        e['target'] = preprocess_utterance(e['target'])
+        e['display_target'] = preprocess_utterance(e['target'])
         processed.append(e)
 
     processed = add_sanity_checks(processed)

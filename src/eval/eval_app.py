@@ -90,7 +90,7 @@ def dump_results(evaluations, db_path, transcript_path):
     results = []
     for exid in responses.keys():
         e = evaluations[exid]
-        e['results'] = responses[exid]
+        e['results'] = zip(*responses[exid])
         results.append(e)
 
     json.dump(results, open(transcript_path, 'w'))

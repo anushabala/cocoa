@@ -182,7 +182,7 @@
     // Ensure all questions have a selected response
     function ensureAllAnswered(){
         var questionAnswers = [];
-        var limit = parseInt({{ evaluation['candidates']|length }});
+        var limit = parseInt({{ evaluation['display_candidates']|length }});
         var i = 0;
         while (i < limit) {
             i = i+1;
@@ -264,7 +264,7 @@
 
             <br><hr><br>
             <h3> Evaluation task </h3>
-            <p>Below the dialogue are {{ evaluation['candidates']|length }} possible responses that could come next in this dialogue. Each of these responses could potentially be said by the <span class="{{ evaluation['role'] }}"><b>{{ evaluation['role'] }}</b></span>. For each candidate, please rate whether it is a sensible response or not, given the dialogue, by rating it as <span class="not_sensible">not sensible</span> (<img src="{{ url_for('static', filename='img/cross.png')}}" width="13" height="13" style="display: inline;">), <span class="sensible">sensible</span>, (<img src="{{ url_for('static', filename='img/checkmark.png')}}" width="13" height="13" style="display:inline;">), or <span class="ambiguous">partly sensible</span> (<img src="{{ url_for('static', filename='img/questionmark.png')}}" width="13" height="13" style="display:inline;">). A <span class="sensible">sensible response</span> is one that is coherent and reasonable given the above dialogue. Any response that is not reasonable should be rated as <span class="not_sensible">not sensible</span>. Some examples of incoherent responses: </p>
+            <p>Below the dialogue are {{ evaluation['display_candidates']|length }} possible responses that could come next in this dialogue. Each of these responses could potentially be said by the <span class="{{ evaluation['role'] }}"><b>{{ evaluation['role'] }}</b></span>. For each candidate, please rate whether it is a sensible response or not, given the dialogue, by rating it as <span class="not_sensible">not sensible</span> (<img src="{{ url_for('static', filename='img/cross.png')}}" width="13" height="13" style="display: inline;">), <span class="sensible">sensible</span>, (<img src="{{ url_for('static', filename='img/checkmark.png')}}" width="13" height="13" style="display:inline;">), or <span class="ambiguous">partly sensible</span> (<img src="{{ url_for('static', filename='img/questionmark.png')}}" width="13" height="13" style="display:inline;">). A <span class="sensible">sensible response</span> is one that is coherent and reasonable given the above dialogue. Any response that is not reasonable should be rated as <span class="not_sensible">not sensible</span>. Some examples of incoherent responses: </p>
             <br>
             <ul>
             <li>changing the topic abruptly</li>
@@ -327,9 +327,9 @@
         <div class="context">
             <h3>Dialogue</h3>
             <table style="float:left;">
-            {% for n in range(evaluation['prev_turns']|length) %}
+            {% for n in range(evaluation['display_prev_turns']|length) %}
             <tr>
-            <td class="{{ evaluation['prev_roles'][n] }}">{{ evaluation['prev_roles'][n]|title}}</td><td class="{{ evaluation['prev_roles'][n] }}">{{ evaluation['prev_turns'][n] }}</td>
+            <td class="{{ evaluation['display_prev_roles'][n] }}">{{ evaluation['display_prev_roles'][n]|title}}</td><td class="{{ evaluation['display_prev_roles'][n] }}">{{ evaluation['display_prev_turns'][n] }}</td>
             </tr>
             {% endfor %}
             </table>
@@ -347,7 +347,7 @@
         <div class="header">
             <h4> Please rate each candidate response below based on the dialogue and Craigslist post above.</h4>
             <table align="left">
-            {% for candidate in evaluation['candidates'] %}
+            {% for candidate in evaluation['display_candidates'] %}
             <tr id="c_{{loop.index}}">
             
             <td class="cc-selector">

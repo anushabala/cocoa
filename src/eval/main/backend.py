@@ -223,7 +223,7 @@ class EvalBackend(object):
 
     def validate_response(self, eval_id, response):
         evaluated = self.evaluations[eval_id]
-        candidates = evaluated['candidates']
+        candidates = evaluated['display_candidates']
         for (lbl, c) in zip(response, candidates):
             lbl = int(lbl)
             if c['true_label'] is not None:
